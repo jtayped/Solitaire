@@ -126,12 +126,12 @@ class Level:
         buffer = self.cardPositions['buffer']
 
         if len(buffer['visible']) > 0:
-            bufferCard = buffer['visible']
+            bufferCard = buffer['visible'][0]
 
             if not bufferCard.lookingBack and bufferCard.rect.collidepoint(mx, my):
                 self.selectedCard = {
                     'origin': 'buffer',
-                    'originPos': (SPACER*2.5+CARD_SIZE, SPACER),
+                    'originPos': (SPACER*2.5+CARD_SIZE[0], SPACER),
                     'index': [-1],
                     'cards': [bufferCard],
                 }
@@ -161,6 +161,33 @@ class Level:
     def pointOnScreen(self, x, y):
         return (x > 0 and x <= WIDTH) and (y > 0 and y <= HEIGHT)
 
+    def resetPosition(self, cards, originPos):
+        originX, originY = originPos
+
+        for cardIndex,movedCard in enumerate(cards):
+            movedCard.rect.x = originX
+            movedCard.rect.y = originY+cardIndex*Y_SPACE_CARDS
+    
+    def setPosition(self, area, card, col):
+        if area == 'playingArea':
+            card.rect.x = col*CARD_SIZE[0]+(col+1)*SPACER
+            card.rect.y = DEALING_SPACE + (len(self.cardPositions['playingArea'][col])-1)*Y_SPACE_CARDS
+        
+        elif area == 'holders':
+            card.rect.x = WIDTH-(N_CARD_HOLDERS*CARD_SIZE[0]+N_CARD_HOLDERS*SPACER) + col*CARD_SIZE[0]+col*SPACER
+            card.rect.y = SPACER
+    
+    def removeFromOrigin(self, movedCard):
+        if self.selectedCard['origin'] == 'buffer':
+            self.cardPositions['buffer']['visible'].pop(-1)
+        
+        else:
+            prevAreaIndex, prevColIndex = self.selectedCard['origin'], self.selectedCard['index'][0]
+            self.cardPositions[prevAreaIndex][prevColIndex].remove(movedCard)
+
+    def validMove(self, area, movedCard):
+        return True #NOTE: add game move logic
+
     def cardMovement(self):
         if pygame.mouse.get_pressed()[0]:
             mx, my = pygame.mouse.get_pos()
@@ -177,6 +204,8 @@ class Level:
                 mx, my = pygame.mouse.get_pos()
 
                 if self.pointOnScreen(mx, my):
+                    area = None
+
                     # Playing area
                     if my > SPACER*2 + CARD_SIZE[1]:
                         col = mx//CARD_SIZE[0]
@@ -185,20 +214,26 @@ class Level:
                     # Dealing and holder area
                     else:
                         if mx > WIDTH - (N_CARD_HOLDERS*CARD_SIZE[0]+N_CARD_HOLDERS*SPACER):
-                            col = (WIDTH-mx)//CARD_SIZE[0] - 1
+                            col = abs((WIDTH-mx)//CARD_SIZE[0] - N_CARD_HOLDERS)-1
                             area = 'holders'
-                        
-                    for movedCard in self.selectedCard['cards']:
-                        self.cardPositions[area][col].append(movedCard)
+                    
+                    if area != None:
+                        for movedCard in self.selectedCard['cards']:
+                            if self.validMove(area, movedCard):
+                                self.cardPositions[area][col].append(movedCard)
+                            else:
+                                self.resetPosition(self.selectedCard['cards'], self.selectedCard['originPos'])
+                                break
 
-                        if area == 'buffer':
-                            self.cardPositions[area][-1].pop()
-                        
-                        else:
-                            prevAreaIndex, prevColIndex = self.selectedCard['origin'], self.selectedCard['index'][0]
-                            self.cardPositions[prevAreaIndex][prevColIndex].remove(movedCard)
+                            self.removeFromOrigin(movedCard)
+                            self.setPosition(area, movedCard, col)
+                    
+                    else:
+                        self.resetPosition(self.selectedCard['cards'], self.selectedCard['originPos'])
+                else:
+                    self.resetPosition(self.selectedCard['cards'], self.selectedCard['originPos'])
 
-                # Reset Values
+                # Reset Values      
                 self.selectedCard = None
                 self.lastMousePos = None
 
@@ -222,8 +257,11 @@ class Level:
             
             else:
                 for column in value:
-                    for card in column:
+                    for cardIndex,card in enumerate(column):
                         card.update()
+
+                        if len(column)-1 == cardIndex and card.lookingBack:
+                            card.lookingBack = False
         
         if self.selectedCard != None:
             for card in self.selectedCard['cards']:
