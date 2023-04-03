@@ -126,7 +126,7 @@ class Level:
         buffer = self.cardPositions['buffer']
 
         if len(buffer['visible']) > 0:
-            bufferCard = buffer['visible'][0]
+            bufferCard = buffer['visible'][-1]
 
             if not bufferCard.lookingBack and bufferCard.rect.collidepoint(mx, my):
                 self.selectedCard = {
@@ -185,8 +185,18 @@ class Level:
             prevAreaIndex, prevColIndex = self.selectedCard['origin'], self.selectedCard['index'][0]
             self.cardPositions[prevAreaIndex][prevColIndex].remove(movedCard)
 
-    def validMove(self, area, movedCard):
-        return True #NOTE: add game move logic
+    def validMove(self, area, colIndex, movedCard):
+        col = self.cardPositions[area][colIndex]
+
+        firstNumberForArea = 1 if area == 'holders' else 13
+        direction = 1 if area == 'holders' else -1
+
+        if len(col) == 0:
+            return movedCard.number == firstNumberForArea
+        else:
+            isContraryIfInPalayingArea = (movedCard.isRed != col[-1].isRed) if area == 'playingArea' else True
+
+            return movedCard.number == col[-1].number+direction and isContraryIfInPalayingArea
 
     def cardMovement(self):
         if pygame.mouse.get_pressed()[0]:
@@ -219,8 +229,9 @@ class Level:
                     
                     if area != None:
                         for movedCard in self.selectedCard['cards']:
-                            if self.validMove(area, movedCard):
+                            if self.validMove(area, col, movedCard):
                                 self.cardPositions[area][col].append(movedCard)
+
                             else:
                                 self.resetPosition(self.selectedCard['cards'], self.selectedCard['originPos'])
                                 break
