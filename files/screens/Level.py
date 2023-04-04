@@ -135,6 +135,17 @@ class Level:
                     'index': [-1],
                     'cards': [bufferCard],
                 }
+        
+        for colIndex,col in enumerate(self.cardPositions['holders']):
+            if len(col) > 0:
+                if not col[-1].lookingBack and col[-1].rect.collidepoint(mx, my):
+                    x = WIDTH-(N_CARD_HOLDERS*CARD_SIZE[0]+N_CARD_HOLDERS*SPACER) + colIndex*CARD_SIZE[0]+colIndex*SPACER
+                    self.selectedCard = {
+                        'origin': 'holders',
+                        'originPos': (x, SPACER),
+                        'index': colIndex,
+                        'cards': [col[-1]],
+                    }
 
     def dragCard(self, mx, my):
         selectedCard = self.selectedCard['cards'][0]
@@ -181,9 +192,12 @@ class Level:
         if self.selectedCard['origin'] == 'buffer':
             self.cardPositions['buffer']['visible'].pop(-1)
         
-        else:
+        elif self.selectedCard['origin'] == 'playingArea':
             prevAreaIndex, prevColIndex = self.selectedCard['origin'], self.selectedCard['index'][0]
             self.cardPositions[prevAreaIndex][prevColIndex].remove(movedCard)
+        
+        else:
+            self.cardPositions[self.selectedCard['origin']][self.selectedCard['index']].pop(-1)
 
     def validMove(self, area, colIndex, movedCard):
         col = self.cardPositions[area][colIndex]
