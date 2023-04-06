@@ -170,7 +170,7 @@ class Level:
         return lastHolderCard.type == movingCard.type and lastHolderCard.number+1 == movingCard.number 
 
     def pointOnScreen(self, x, y):
-        return (x > 0 and x <= WIDTH) and (y > 0 and y <= HEIGHT)
+        return (x > 0 and x < WIDTH-1) and (y > 0 and y < HEIGHT-1)
 
     def resetPosition(self, cards, originPos):
         originX, originY = originPos
@@ -208,9 +208,10 @@ class Level:
         if len(col) == 0:
             return movedCard.number == firstNumberForArea
         else:
-            isContraryIfInPalayingArea = (movedCard.isRed != col[-1].isRed) if area == 'playingArea' else True
+            # If it's the contrary color (only in playing area)
+            isContraryColor = (movedCard.isRed != col[-1].isRed) if area == 'playingArea' else True
 
-            return movedCard.number == col[-1].number+direction and isContraryIfInPalayingArea
+            return movedCard.number == col[-1].number+direction and isContraryColor
 
     def cardMovement(self):
         if pygame.mouse.get_pressed()[0]:
