@@ -4,7 +4,7 @@ from ..misc.settings import *
 
 class Card:
     def __init__(self, screen, image, pos, type: str, number: int, lookingBack=False) -> None:
-        serif = pygame.font.SysFont('sans-serif', 40)
+        serif = pygame.font.SysFont(None, 40)
         arial = pygame.font.SysFont('arial', 30, True)
 
         self.screen = screen
@@ -25,7 +25,7 @@ class Card:
             
             self.letterSurface = arial.render(letter, True, self.color)
             self.upsideDownLetter = pygame.transform.rotate(self.letterSurface, 180)
-
+        
         self.numberSurface = serif.render(str(number), True, self.color)
         self.upsideDownNumber = pygame.transform.rotate(self.numberSurface, 180)
 
